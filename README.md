@@ -7,7 +7,7 @@ Build and train machine learning / deep learning models and try to forecast stoc
 
 •	Analyze the stock price (return) predictability among the provided factors.
 
-•	Deploy the model to website or any platform through Amazon Sagemaker, such that users can input a stock symbol and get the prediction of movements tomorrow.
+•	Deploy the model, such that users can get the prediction of price movements tomorrow.
 
 ## Data
 
