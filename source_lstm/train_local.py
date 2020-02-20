@@ -137,7 +137,7 @@ if __name__ == '__main__':
     # Training Parameters, given
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                         help='input batch size for training (default: 64)')
-    parser.add_argument('--epochs', type=int, default=100, metavar='N',
+    parser.add_argument('--epochs', type=int, default=1, metavar='N',
                         help='number of epochs to train (default: 10)')
     parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
                         help='learning rate (default: 0.001)')
@@ -147,7 +147,7 @@ if __name__ == '__main__':
     # Model parameters
     parser.add_argument('--input_dim', type=int, default=46, metavar='IN',
                         help='number of input features to model (default: 2)')
-    parser.add_argument('--hidden_dim', type=int, default=10, metavar='H',
+    parser.add_argument('--hidden_dim', type=int, default=2, metavar='H',
                         help='hidden dim of model (default: 20)')
     parser.add_argument('--output_dim', type=int, default=1, metavar='OUT',
                         help='output dim of model (default: 1)')

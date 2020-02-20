@@ -16,6 +16,8 @@ class SimpleLSTM(nn.Module):
                             torch.zeros(1, 1, self.hidden_layer_size))
 
     def forward(self, input_seq):
+
         lstm_out, self.hidden_cell = self.lstm(input_seq.view(len(input_seq), 1, -1), self.hidden_cell)
         predictions = self.linear(lstm_out.view(len(input_seq), -1))
-        return predictions[-1]
+
+        return predictions
