@@ -33,7 +33,8 @@ def model_fn(model_dir):
 
     # Determine the device and construct the model.
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = SimpleLSTM(model_info['input_dim'], model_info['hidden_dim'], model_info['output_dim'])
+    model = SimpleLSTM(model_info['input_dim'], model_info['feature_dim'],
+                       model_info['hidden_dim'], model_info['output_dim'])
 
     # Load the stored model parameters.
     model_path = os.path.join(model_dir, 'model.pth')

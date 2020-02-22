@@ -16,6 +16,10 @@ if __name__ == '__main__':
     y_pred = predict_fn(X_test, model)
 
     y_pred = y_pred.reshape(y_pred.shape[0])
+
+    plt.figure()
+    plt.plot(y_pred)
+
     y_test = y_test.reshape(y_pred.shape[0])
 
     accuracy = ( np.logical_or( np.logical_and(y_pred >= 0, y_test >= 0),
