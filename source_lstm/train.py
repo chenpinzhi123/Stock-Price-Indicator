@@ -91,6 +91,8 @@ def train(model, train_loader, epochs, optimizer, criterion, device):
 
         # print loss stats
         print("Epoch: {}, Loss: {}".format(epoch, total_loss / len(train_loader)))
+    
+    print("validation:rmse={}".format(total_loss / len(train_loader)))
 
     # save trained model, after all epochs
     save_model(model, args.model_dir)
