@@ -41,12 +41,15 @@ def model_fn(model_dir):
     return model.to(device)
 
 
-# Load the training data from a csv file
-def _get_train_loader(batch_size, data_dir):
-    print("Get data loader. (train.csv)")
+# Load the training data and validation data from a csv file
+def _get_train_val_loader(batch_size, data_dir, validation_split):
+    print("Get data loader.")
 
     # read in csv file
-    train_data = pd.read_csv(os.path.join(data_dir, "train.csv"), header=None)
+    data = pd.read_csv(os.path.join(data_dir, "train.csv"), header=None)
+    
+    split = int(data.shape[0] * (1 - validation_split))
+    train_data = data[:split]
 
     # labels are first column
     train_y = torch.from_numpy(train_data[[0]].values).float().squeeze()
@@ -55,26 +58,19 @@ def _get_train_loader(batch_size, data_dir):
 
     # create dataset
     train_ds = torch.utils.data.TensorDataset(train_x, train_y)
+    
+    if validation_split > 0:
+        val_data = data[split:]
+        # labels are first column
+        val_y = torch.from_numpy(val_data[[0]].values).float().squeeze()
+        # features are the rest
+        val_x = torch.from_numpy(val_data.drop([0], axis=1).values).float()
+        # create dataset
+        val_ds = torch.utils.data.TensorDataset(val_x, val_y)
+    else:    
+        val_ds = None
 
-    return torch.utils.data.DataLoader(train_ds, batch_size=batch_size)
-
-
-# Load the training data from a csv file
-def _get_validation_dataset(data_dir):
-    print("Get data loader. (val.csv)")
-
-    # read in csv file
-    val_data = pd.read_csv(os.path.join(data_dir, "val.csv"), header=None)
-
-    # labels are first column
-    val_y = torch.from_numpy(val_data[[0]].values).float().squeeze()
-    # features are the rest
-    val_x = torch.from_numpy(val_data.drop([0], axis=1).values).float()
-
-    # create dataset
-    val_ds = torch.utils.data.TensorDataset(val_x, val_y)
-
-    return val_ds
+    return (torch.utils.data.DataLoader(train_ds, batch_size=batch_size), val_ds)
 
 
 # Provided train function
@@ -112,10 +108,11 @@ def train(model, train_loader, val_dataset, epochs, optimizer, criterion, device
         print("Epoch: {}, Loss: {}".format(epoch, total_loss / len(train_loader)))
 
         # print validation loss stats
-        val_data, val_target = val_dataset.tensors
-        val_output = model(val_data)
-        val_loss = criterion(val_output, val_target)
-        print("validation:rmse={}".format(val_loss))
+        if val_dataset is not None:
+            val_data, val_target = val_dataset.tensors
+            val_output = model(val_data)
+            val_loss = criterion(val_output, val_target)
+            print("validation:rmse={}".format(val_loss / len(val_target)))
 
     # save trained model, after all epochs
     save_model(model, args.model_dir)
@@ -184,7 +181,9 @@ if __name__ == '__main__':
                         help='learning rate (default: 0.001)')
     parser.add_argument('--seed', type=int, default=10000, metavar='S',
                         help='random seed (default: 1)')
-
+    parser.add_argument('--validation_split', type=float, default=0, metavar='VS',
+                        help='validation set splitting (default: 0), default NO spliting of validation set.')
+    
     # Model parameters
     parser.add_argument('--input_dim', type=int, default=46, metavar='IN',
                         help='number of input features to model (default: 2)')
@@ -205,8 +204,8 @@ if __name__ == '__main__':
         torch.cuda.manual_seed(args.seed)
 
     # get train loader
-    train_loader = _get_train_loader(args.batch_size, args.data_dir)  # data_dir from above..
-    val_dataset = _get_validation_dataset(args.data_dir)
+    train_loader, val_dataset = _get_train_val_loader(args.batch_size,
+                                                      args.data_dir, args.validation_split)  # data_dir from above..
 
     # To get params from the parser, call args.argument_name, ex. args.epochs or ards.hidden_dim
     # Don't forget to move your model .to(device) to move to GPU , if appropriate

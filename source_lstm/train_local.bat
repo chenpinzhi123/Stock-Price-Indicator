@@ -1,1 +1,1 @@
-python source_lstm/train.py --model-dir "model" --data-dir "data" --epochs 1
+python source_lstm/train.py --model-dir "model" --train-data-dir "data" --val-data-dir "data" --epochs 1
