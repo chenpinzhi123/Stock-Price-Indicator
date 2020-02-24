@@ -43,7 +43,7 @@ def model_fn(model_dir):
 
 # Load the training data from a csv file
 def _get_train_loader(batch_size, data_dir):
-    print("Get data loader.")
+    print("Get data loader. (train.csv)")
 
     # read in csv file
     train_data = pd.read_csv(os.path.join(data_dir, "train.csv"), header=None)
@@ -59,13 +59,32 @@ def _get_train_loader(batch_size, data_dir):
     return torch.utils.data.DataLoader(train_ds, batch_size=batch_size)
 
 
+# Load the training data from a csv file
+def _get_validation_dataset(data_dir):
+    print("Get data loader. (val.csv)")
+
+    # read in csv file
+    val_data = pd.read_csv(os.path.join(data_dir, "val.csv"), header=None)
+
+    # labels are first column
+    val_y = torch.from_numpy(val_data[[0]].values).float().squeeze()
+    # features are the rest
+    val_x = torch.from_numpy(val_data.drop([0], axis=1).values).float()
+
+    # create dataset
+    val_ds = torch.utils.data.TensorDataset(val_x, val_y)
+
+    return val_ds
+
+
 # Provided train function
-def train(model, train_loader, epochs, optimizer, criterion, device):
+def train(model, train_loader, val_dataset, epochs, optimizer, criterion, device):
     """
     This is the training method that is called by the PyTorch training script. The parameters
     passed are as follows:
     model        - The PyTorch model that we wish to train.
     train_loader - The PyTorch DataLoader that should be used during training.
+    val_dataset  - The PyTorch Tensor data-set that should be used in the validation
     epochs       - The total number of epochs to train for.
     optimizer    - The optimizer to use during training.
     criterion    - The loss function used for training.
@@ -91,8 +110,12 @@ def train(model, train_loader, epochs, optimizer, criterion, device):
 
         # print loss stats
         print("Epoch: {}, Loss: {}".format(epoch, total_loss / len(train_loader)))
-    
-    print("validation:rmse={}".format(total_loss / len(train_loader)))
+
+        # print validation loss stats
+        val_data, val_target = val_dataset.tensors
+        val_output = model(val_data)
+        val_loss = criterion(val_output, val_target)
+        print("validation:rmse={}".format(val_loss))
 
     # save trained model, after all epochs
     save_model(model, args.model_dir)
@@ -130,10 +153,27 @@ if __name__ == '__main__':
     # SageMaker parameters, like the directories for training data and saving models; set automatically
     # Do not need to change
 
-    parser.add_argument('--hosts', type=list, default=json.loads(os.environ['SM_HOSTS']))
-    parser.add_argument('--current-host', type=str, default=os.environ['SM_CURRENT_HOST'])
-    parser.add_argument('--model-dir', type=str, default=os.environ['SM_MODEL_DIR'])
-    parser.add_argument('--data-dir', type=str, default=os.environ['SM_CHANNEL_TRAIN'])
+    try:
+        sm_host = json.loads(os.environ['SM_HOSTS'])
+    except:
+        sm_host = []
+    try:
+        current_host = os.environ['SM_CURRENT_HOST']
+    except:
+        current_host = ""
+    try:
+        model_dir = os.environ['SM_MODEL_DIR']
+    except:
+        model_dir = ""
+    try:
+        data_dir = os.environ['SM_CHANNEL_TRAIN']
+    except:
+        data_dir = ""
+
+    parser.add_argument('--hosts', type=list, default=sm_host)
+    parser.add_argument('--current-host', type=str, default=current_host)
+    parser.add_argument('--model-dir', type=str, default=model_dir)
+    parser.add_argument('--data-dir', type=str, default=data_dir)
 
     # Training Parameters, given
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
@@ -166,6 +206,7 @@ if __name__ == '__main__':
 
     # get train loader
     train_loader = _get_train_loader(args.batch_size, args.data_dir)  # data_dir from above..
+    val_dataset = _get_validation_dataset(args.data_dir)
 
     # To get params from the parser, call args.argument_name, ex. args.epochs or ards.hidden_dim
     # Don't forget to move your model .to(device) to move to GPU , if appropriate
@@ -179,4 +220,4 @@ if __name__ == '__main__':
 
     # Trains the model (given line of code, which calls the above training function)
     # This function *also* saves the model state dictionary
-    train(model, train_loader, args.epochs, optimizer, criterion, device)
+    train(model, train_loader, val_dataset, args.epochs, optimizer, criterion, device)
