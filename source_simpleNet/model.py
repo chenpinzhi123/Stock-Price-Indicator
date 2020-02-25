@@ -11,7 +11,6 @@ class SimpleNet(nn.Module):
            :param output_dim: Number of outputs
          '''
         super(SimpleNet, self).__init__()
-
         # defining 2 linear layers
         self.fc1 = nn.Linear(input_dim, hidden_dim)
         self.fc2 = nn.Linear(hidden_dim, output_dim)
@@ -21,7 +20,7 @@ class SimpleNet(nn.Module):
     def forward(self, x):
         '''Feedforward behavior of the net.
            :param x: A batch of input features
-           :return: A single, sigmoid activated value
+           :return: A single real value
         '''
         out = self.fc1(x)
         out = self.sig(out)

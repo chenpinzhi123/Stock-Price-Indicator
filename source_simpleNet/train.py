@@ -93,7 +93,6 @@ def train(model, train_loader, epochs, optimizer, criterion, device):
 
     # save trained model, after all epochs
     save_model(model, args.model_dir)
-
     return model
 
 
@@ -125,11 +124,27 @@ if __name__ == '__main__':
 
     # SageMaker parameters, like the directories for training data and saving models; set automatically
     # Do not need to change
+    try:
+        sm_host = json.loads(os.environ['SM_HOSTS'])
+    except:
+        sm_host = []
+    try:
+        current_host = os.environ['SM_CURRENT_HOST']
+    except:
+        current_host = ""
+    try:
+        model_dir = os.environ['SM_MODEL_DIR']
+    except:
+        model_dir = ""
+    try:
+        data_dir = os.environ['SM_CHANNEL_TRAIN']
+    except:
+        data_dir = ""
 
-    parser.add_argument('--hosts', type=list, default=json.loads(os.environ['SM_HOSTS']))
-    parser.add_argument('--current-host', type=str, default=os.environ['SM_CURRENT_HOST'])
-    parser.add_argument('--model-dir', type=str, default=os.environ['SM_MODEL_DIR'])
-    parser.add_argument('--data-dir', type=str, default=os.environ['SM_CHANNEL_TRAIN'])
+    parser.add_argument('--hosts', type=list, default=sm_host)
+    parser.add_argument('--current-host', type=str, default=current_host)
+    parser.add_argument('--model-dir', type=str, default=model_dir)
+    parser.add_argument('--data-dir', type=str, default=data_dir)
 
     # Training Parameters, given
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
